@@ -55,7 +55,6 @@ resource "azurerm_linux_virtual_machine" "vm" {
   ]
 
   os_disk {
-    caching_enabled      = true
     storage_account_type = "Standard_LRS"
   }
 
