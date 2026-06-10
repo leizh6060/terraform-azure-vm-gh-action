@@ -38,6 +38,13 @@
       args:
         creates: /opt/tomcat
 
+    - name: Set ownership on Tomcat directory recursively
+      file:
+        path: /opt/tomcat
+        owner: tomcat
+        group: tomcat
+        recurse: yes
+
     - name: Set permissions on tomcat bin directory
       file:
         path: /opt/tomcat/bin
