@@ -5,10 +5,11 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
   terraform:
-    name: 'Terraform'
+    name: 'Terraform Infra'
     runs-on: ubuntu-latest
     env:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -42,3 +43,31 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
+
+  provision:
+    name: 'Ansible Provisioning'
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    env:
+      ANSIBLE_HOST_KEY_CHECKING: "False"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Install Ansible and sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible sshpass
+
+      - name: Run Ansible Playbook
+        run: |
+          VM_IP=$(terraform output -raw public_ip_address)
+          ansible-playbook -i "$VM_IP," -u azureuser --extra-vars "ansible_ssh_pass=${{ secrets.VM_ADMIN_PASSWORD }}" ansible/playbook.yml
+

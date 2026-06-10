@@ -1,0 +1,75 @@
+---
+- name: Install Apache Tomcat
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install OpenJDK 11
+      apt:
+        name: openjdk-11-jdk
+        state: present
+
+    - name: Create tomcat group
+      group:
+        name: tomcat
+        state: present
+
+    - name: Create tomcat user
+      user:
+        name: tomcat
+        group: tomcat
+        shell: /bin/false
+        home: /opt/tomcat
+
+    - name: Download and unarchive Tomcat
+      unarchive:
+        src: "https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.96/bin/apache-tomcat-9.0.96.tar.gz"
+        dest: /opt/
+        remote_src: yes
+        owner: tomcat
+        group: tomcat
+
+    - name: Fix Tomcat directory name (flatten)
+      shell: mv /opt/apache-tomcat-9.0.96 /opt/tomcat
+      args:
+        creates: /opt/tomcat
+
+    - name: Set permissions on tomcat bin directory
+      file:
+        path: /opt/tomcat/bin
+        mode: '0755'
+        owner: tomcat
+        group: tomcat
+        recurse: yes
+
+    - name: Create Tomcat systemd service file
+      copy:
+        dest: /etc/systemd/system/tomcat.service
+        content: |
+          [Unit]
+          Description=Apache Tomcat Web Application Container
+          After=network.target
+
+          [Service]
+          Type=forking
+          User=tomcat
+          Group=tomcat
+          Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"
+          Environment="CATALINA_PID=/opt/tomcat/temp/tomcat.pid"
+          Environment="CATALINA_HOME=/opt/tomcat"
+          Environment="CATALINA_BASE=/opt/tomcat"
+          ExecStart=/opt/tomcat/bin/startup.sh
+          ExecStop=/opt/tomcat/bin/shutdown.sh
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd and start Tomcat
+      systemd:
+        name: tomcat
+        state: started
+        enabled: yes
+        daemon_reload: yes
