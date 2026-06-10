@@ -34,9 +34,11 @@
         group: tomcat
 
     - name: Fix Tomcat directory name (flatten)
-      shell: mv /opt/apache-tomcat-9.0.96 /opt/tomcat
-      args:
-        removes: /opt/apache-tomcat-9.0.96
+      shell: |
+        if [ -d "/opt/apache-tomcat-9.0.96" ]; then
+          rm -rf /opt/tomcat
+          mv /opt/apache-tomcat-9.0.96 /opt/tomcat
+        fi
 
     - name: Get Java Home
       shell: readlink -f /usr/bin/java | sed "s:/bin/java::"
@@ -59,6 +61,7 @@
 
     - name: Ensure all bin scripts are executable
       shell: chmod +x /opt/tomcat/bin/*.sh
+      ignore_errors: yes
 
     - name: Create Tomcat systemd service file
       copy:
