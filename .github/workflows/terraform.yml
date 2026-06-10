@@ -31,6 +31,8 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: terraform init
@@ -58,6 +60,8 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: terraform init
@@ -69,7 +73,7 @@ jobs:
 
       - name: Run Ansible Playbook
         run: |
-          VM_IP=$(terraform output -raw public_ip_address)
+          VM_IP=$(terraform output -raw public_ip_address | tr -d '\r\n')
           echo "Target VM IP: $VM_IP"
           ansible-playbook -i "$VM_IP," -u azureuser --extra-vars "ansible_ssh_pass=${{ secrets.VM_ADMIN_PASSWORD }}" ansible/playbook.yml
 
