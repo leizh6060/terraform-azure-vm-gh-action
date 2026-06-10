@@ -38,6 +38,10 @@
       args:
         creates: /opt/tomcat
 
+    - name: Get Java Home
+      shell: readlink -f /usr/bin/java | sed "s:/bin/java::"
+      register: java_home_cmd
+
     - name: Set ownership on Tomcat directory recursively
       file:
         path: /opt/tomcat
@@ -62,15 +66,13 @@
           After=network.target
 
           [Service]
-          Type=forking
+          Type=simple
           User=tomcat
           Group=tomcat
-          Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"
-          Environment="CATALINA_PID=/opt/tomcat/temp/tomcat.pid"
+          Environment="JAVA_HOME={{ java_home_cmd.stdout }}"
           Environment="CATALINA_HOME=/opt/tomcat"
           Environment="CATALINA_BASE=/opt/tomcat"
-          ExecStart=/opt/tomcat/bin/startup.sh
-          ExecStop=/opt/tomcat/bin/shutdown.sh
+          ExecStart=/opt/tomcat/bin/catalina.sh run
 
           [Install]
           WantedBy=multi-user.target
