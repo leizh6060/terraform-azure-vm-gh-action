@@ -70,5 +70,6 @@ jobs:
       - name: Run Ansible Playbook
         run: |
           VM_IP=$(terraform output -raw public_ip_address)
+          echo "Target VM IP: $VM_IP"
           ansible-playbook -i "$VM_IP," -u azureuser --extra-vars "ansible_ssh_pass=${{ secrets.VM_ADMIN_PASSWORD }}" ansible/playbook.yml
 
